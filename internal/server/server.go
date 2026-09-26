@@ -27,7 +27,7 @@ func New(cfg config.Config, db *sql.DB) http.Handler {
 
 	// services
 	profileSvc := profile.NewService(profile.NewRepository(db))
-	authSvc := auth.NewService(auth.NewRepository(db), tokens, profileSvc)
+	authSvc := auth.NewService(auth.NewRepository(db), tokens, profileSvc, cfg.GoogleClientID)
 	resumeSvc := resume.NewService(resume.NewRepository(db))
 	jobSvc := job.NewService(job.NewRepository(db))
 	aiSvc := ai.NewService(ai.NewRepository(db), claude.NewClient(cfg.AnthropicAPIKey), ai.Config{

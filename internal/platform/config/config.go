@@ -18,7 +18,8 @@ type Config struct {
 	AllowedOrigins  []string
 	AIDailyLimit    int
 	WebURL          string
-	TrustProxy      bool // honour X-Forwarded-For (only behind a trusted reverse proxy)
+	GoogleClientID  string // OAuth client ID; empty disables Google sign-in
+	TrustProxy      bool   // honour X-Forwarded-For (only behind a trusted reverse proxy)
 }
 
 func Load() Config {
@@ -31,6 +32,7 @@ func Load() Config {
 		ModelFast:       env("CLAUDE_MODEL_FAST", "claude-haiku-4-5"),
 		AIDailyLimit:    envInt("AI_DAILY_LIMIT", 100),
 		WebURL:          env("WEB_URL", "http://localhost:3000"),
+		GoogleClientID:  env("GOOGLE_CLIENT_ID", ""),
 		TrustProxy:      env("TRUST_PROXY", "") == "true",
 	}
 	for _, o := range strings.Split(env("ALLOWED_ORIGINS", "http://localhost:3000"), ",") {

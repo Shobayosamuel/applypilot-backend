@@ -28,6 +28,17 @@ func (r *SignupRequest) Validate() error {
 	return nil
 }
 
+type GoogleRequest struct {
+	IDToken string `json:"id_token"`
+}
+
+func (r *GoogleRequest) Validate() error {
+	if r.IDToken == "" || len(r.IDToken) > 8<<10 {
+		return apperr.Invalid("id_token is required")
+	}
+	return nil
+}
+
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`

@@ -15,7 +15,26 @@ func NewHandler(svc *Service) *Handler { return &Handler{svc: svc} }
 func (h *Handler) Routes(mux *http.ServeMux, authed, limit middleware.Func) {
 	mux.HandleFunc("POST /api/auth/signup", limit(h.Signup))
 	mux.HandleFunc("POST /api/auth/login", limit(h.Login))
+	mux.HandleFunc("POST /api/auth/google", limit(h.Google))
 	mux.HandleFunc("GET /api/me", authed(h.Me))
+}
+
+func (h *Handler) Google(w http.ResponseWriter, r *http.Request) {
+	var req GoogleRequest
+	if err := httpx.Decode(w, r, &req, 16<<10); err != nil {
+		httpx.Error(w, r, err)
+		return
+	}
+	if err := req.Validate(); err != nil {
+		httpx.Error(w, r, err)
+		return
+	}
+	res, err := h.svc.Google(r.Context(), req)
+	if err != nil {
+		httpx.Error(w, r, err)
+		return
+	}
+	httpx.JSON(w, http.StatusOK, res)
 }
 
 func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
