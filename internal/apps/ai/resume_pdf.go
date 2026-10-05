@@ -82,7 +82,7 @@ func (s *Service) ResumePDF(ctx context.Context, userID, generationID string) ([
 		Email:          prof.Email,
 		Phone:          prof.Phone,
 		Location:       joinNonEmpty(", ", prof.Location.City, prof.Location.State, prof.Location.Country),
-		Links:          nonEmpty(prof.Links.LinkedIn, prof.Links.GitHub, prof.Links.Portfolio, prof.Links.Website),
+		Links:          profileLinks(prof.Links.LinkedIn, prof.Links.GitHub, prof.Links.Portfolio, prof.Links.Website),
 		Summary:        tailored.Summary,
 		Skills:         tailored.Skills,
 		Experience:     mergeExperience(prof.WorkExperience, tailored.Experience),
@@ -154,12 +154,20 @@ func joinNonEmpty(sep string, parts ...string) string {
 	return strings.Join(out, sep)
 }
 
-func nonEmpty(parts ...string) []string {
-	var out []string
-	for _, p := range parts {
-		if p = strings.TrimSpace(p); p != "" {
-			out = append(out, p)
+// profileLinks turns raw URLs (with or without a scheme) into links with a
+// clean display label and a scheme the PDF reader can actually open.
+func profileLinks(raw ...string) []pdfgen.Link {
+	out := make([]pdfgen.Link, 0, len(raw))
+	for _, r := range raw {
+		if r = strings.TrimSpace(r); r == "" {
+			continue
 		}
+		url := r
+		if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+			url = "https://" + url
+		}
+		label := strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(r, "https://"), "http://"), "/")
+		out = append(out, pdfgen.Link{Label: label, URL: url})
 	}
 	return out
 }

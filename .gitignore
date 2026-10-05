@@ -1,11 +1,13 @@
 bin/
-.env
 *.log
 .neon
-.env.local
 node_modules/
 .claude/
 neon.ts
 package.json
 package-lock.json
 skills-lock.json
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+config.bat
