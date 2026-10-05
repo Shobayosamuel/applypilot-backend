@@ -3,8 +3,11 @@ package ai
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"strconv"
 	"time"
+
+	"github.com/shobayosamuel/applypilot-backend/internal/platform/database"
 )
 
 // Generation is one logged Claude call.
@@ -31,12 +34,32 @@ type Repository struct{ db *sql.DB }
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
-func (r *Repository) Log(ctx context.Context, g *Generation) error {
-	_, err := r.db.ExecContext(ctx, `
+// Log records a generation and returns its id.
+func (r *Repository) Log(ctx context.Context, g *Generation) (string, error) {
+	var id string
+	err := r.db.QueryRowContext(ctx, `
 		INSERT INTO ai_generations (user_id, job_id, kind, input_summary, output, model, input_tokens, output_tokens, cache_read_tokens)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-		g.UserID, g.JobID, g.Kind, g.InputSummary, g.Output, g.Model, g.InputTokens, g.OutputTokens, g.CacheRead)
-	return err
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+		g.UserID, g.JobID, g.Kind, g.InputSummary, g.Output, g.Model, g.InputTokens, g.OutputTokens, g.CacheRead).Scan(&id)
+	return id, err
+}
+
+var errGenerationNotFound = errors.New("generation not found")
+
+// Get returns one generation owned by userID, or errGenerationNotFound.
+func (r *Repository) Get(ctx context.Context, userID, id string) (*Generation, error) {
+	var g Generation
+	var job sql.NullString
+	err := r.db.QueryRowContext(ctx, `SELECT id, user_id, job_id, kind, input_summary, output, model, input_tokens, output_tokens, cache_read_tokens, created_at
+		FROM ai_generations WHERE id = $1 AND user_id = $2`, id, userID).
+		Scan(&g.ID, &g.UserID, &job, &g.Kind, &g.InputSummary, &g.Output, &g.Model, &g.InputTokens, &g.OutputTokens, &g.CacheRead, &g.CreatedAt)
+	if database.IsNotFound(err) {
+		return nil, errGenerationNotFound
+	}
+	if job.Valid {
+		g.JobID = &job.String
+	}
+	return &g, err
 }
 
 func (r *Repository) CallsToday(ctx context.Context, userID string) (int, error) {

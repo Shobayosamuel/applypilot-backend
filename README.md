@@ -67,7 +67,7 @@ Auth: `POST /api/auth/signup`, `POST /api/auth/login` → `{token, expires_at, u
 | profile | `GET/PUT /api/profile` |
 | resume | `GET/POST /api/resumes`, `GET /api/resumes/{id\|default}/file`, `POST /api/resumes/{id}/default`, `DELETE /api/resumes/{id}` |
 | job | `GET/POST /api/jobs` (POST upserts by URL), `GET /api/jobs/lookup?url=`, `GET/PATCH/DELETE /api/jobs/{id}`, `GET /api/stats` |
-| ai | `POST /api/ai/{parse-resume,match,cover-letter,tailor-resume,answer,map-fields,extract-job}`, `GET /api/ai/usage`, `GET /api/ai/generations?job_id=` |
+| ai | `POST /api/ai/{parse-resume,match,cover-letter,tailor-resume,answer,map-fields,extract-job}`, `GET /api/ai/usage`, `GET /api/ai/generations?job_id=`, `GET /api/ai/generations/{id}/resume.pdf` |
 
 ## Claude usage
 
@@ -76,3 +76,4 @@ Auth: `POST /api/auth/signup`, `POST /api/auth/login` → `{token, expires_at, u
 - **Prompt caching:** the user's profile is sent as its own cached system block.
 - **Usage logging:** every call is logged in `ai_generations` with its token counts, and `AI_DAILY_LIMIT` caps calls per user.
 - **Truthful output:** the prompts forbid inventing experience, and select/radio answers are checked against the form's real options.
+- **Resume PDF:** `tailor-resume` returns a `generation_id`; fetching `GET /api/ai/generations/{id}/resume.pdf` renders that result as a downloadable PDF (`internal/platform/pdfgen`), merging it with the profile's original dates, locations and education (the AI call itself doesn't touch those).

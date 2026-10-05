@@ -30,6 +30,7 @@ type TailoredExperience struct {
 }
 
 type TailoredResumeResource struct {
+	GenerationID  string               `json:"generation_id"` // pass to GET /api/ai/generations/{id}/resume.pdf
 	Headline      string               `json:"headline"`
 	Summary       string               `json:"summary"`
 	Skills        []string             `json:"skills"`

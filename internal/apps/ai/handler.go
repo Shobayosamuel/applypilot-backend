@@ -2,6 +2,7 @@ package ai
 
 import (
 	"context"
+	"mime"
 	"net/http"
 
 	"github.com/shobayosamuel/applypilot-backend/internal/platform/httpx"
@@ -22,6 +23,7 @@ func (h *Handler) Routes(mux *http.ServeMux, authed middleware.Func) {
 	mux.HandleFunc("POST /api/ai/extract-job", authed(handle(h.svc.ExtractJob, 2<<20)))
 	mux.HandleFunc("GET /api/ai/usage", authed(h.Usage))
 	mux.HandleFunc("GET /api/ai/generations", authed(h.Generations))
+	mux.HandleFunc("GET /api/ai/generations/{id}/resume.pdf", authed(h.ResumePDF))
 }
 
 // validatable is implemented by every request type (pointer receiver).
@@ -68,4 +70,15 @@ func (h *Handler) Generations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.JSON(w, http.StatusOK, res)
+}
+
+func (h *Handler) ResumePDF(w http.ResponseWriter, r *http.Request) {
+	data, filename, err := h.svc.ResumePDF(r.Context(), httpx.UserID(r), r.PathValue("id"))
+	if err != nil {
+		httpx.Error(w, r, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": filename}))
+	w.Write(data)
 }

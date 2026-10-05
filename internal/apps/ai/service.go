@@ -94,7 +94,8 @@ func (s *Service) resolveJob(ctx context.Context, userID string, ref JobRef) (Jo
 	return in, jobID, nil
 }
 
-func (s *Service) record(ctx context.Context, userID string, jobID *string, kind, input string, output any, r *c.Response) {
+// record logs a generation and returns its id ("" if logging failed).
+func (s *Service) record(ctx context.Context, userID string, jobID *string, kind, input string, output any, r *c.Response) string {
 	if len(input) > 500 {
 		input = input[:500]
 	}
@@ -105,9 +106,11 @@ func (s *Service) record(ctx context.Context, userID string, jobID *string, kind
 		g.OutputTokens = r.Usage.OutputTokens
 		g.CacheRead = r.Usage.CacheReadInputTokens
 	}
-	if err := s.repo.Log(ctx, g); err != nil {
+	id, err := s.repo.Log(ctx, g)
+	if err != nil {
 		log.Printf("log generation: %v", err)
 	}
+	return id
 }
 
 // claudeErr converts client errors into client-safe app errors.
@@ -221,7 +224,7 @@ func (s *Service) TailorResume(ctx context.Context, userID string, req TailorReq
 	if err != nil {
 		return nil, claudeErr(err)
 	}
-	s.record(ctx, userID, jobID, "tailor_resume", j.Title+" @ "+j.Company, out, r)
+	out.GenerationID = s.record(ctx, userID, jobID, "tailor_resume", j.Title+" @ "+j.Company, out, r)
 	return &out, nil
 }
 
